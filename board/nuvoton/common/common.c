@@ -63,6 +63,10 @@ int board_set_console(void)
 	u8 dll, dlm;
 	u16 divisor;
 	int ret, i;
+	char *bootargs = NULL;
+	char *tty_offset = NULL;
+	char *tty_console = NULL;
+	bool tty_configured = false;
 
 	/* If uart init is skipped, update the actual baudrate in boot arguments */
 	if (!IS_ENABLED(CONFIG_SYS_SKIP_UART_INIT))
@@ -100,7 +104,27 @@ int board_set_console(void)
 		       uart_clk, baudrate, uart_clk / ((16 * (divisor + 2))));
 	}
 	debug("Set env baudrate=%u\n", gd->baudrate);
-	snprintf(string, sizeof(string), "ttyS0,%un8", gd->baudrate);
+
+	bootargs = env_get("bootargs");
+	if (bootargs) {
+		bootargs = strdup(bootargs);
+		if (bootargs) {
+			tty_offset = strstr(bootargs, "tty");
+			if (tty_offset)
+				tty_console = strsep(&tty_offset, ",");
+
+			if (tty_console) {
+				snprintf(string, sizeof(string), "%s,%un8", tty_console, gd->baudrate);
+				tty_configured = true;
+			}
+
+			free(bootargs);
+		}
+	}
+
+	if (!tty_configured)
+		snprintf(string, sizeof(string), "ttyS0,%un8", gd->baudrate);
+
 	env_set("console", string);
 
 	return 0;
