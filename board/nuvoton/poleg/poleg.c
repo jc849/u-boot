@@ -141,6 +141,9 @@ int last_stage_init(void)
 		env_set("console", value);
 		board_set_console();
 	}
+
+	board_save_default_env();
+
 	arch_preboot_os();
 
 	return 0;

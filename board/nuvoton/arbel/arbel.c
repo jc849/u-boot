@@ -306,5 +306,7 @@ int last_stage_init(void)
 
 	board_set_console();
 
+	board_save_default_env();
+
 	return 0;
 }
