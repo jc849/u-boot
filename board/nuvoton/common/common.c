@@ -8,12 +8,48 @@
 #include <dm.h>
 #include <env.h>
 #include <serial.h>
+#include <fdtdec.h>
 #include <linux/delay.h>
 
 #define UART_DLL	0x0
 #define UART_DLM	0x4
 #define UART_LCR	0xc
 #define LCR_DLAB	BIT(7)
+
+#if defined(CONFIG_CMD_SAVEENV)
+/* allow save the environment data, the same handle in board_r.c */
+static int should_save_env(void)
+{
+	if (IS_ENABLED(CONFIG_OF_CONTROL))
+		return fdtdec_get_config_int(gd->fdt_blob,
+						"load-environment", 1);
+
+	if (IS_ENABLED(CONFIG_DELAY_ENVIRONMENT))
+		return 0;
+
+	return 1;
+}
+
+int board_save_default_env(void)
+{
+	if (should_save_env()) {
+		/* env data ready */
+		if (gd->flags & GD_FLG_ENV_READY) {
+			/* use default environment, save it */
+			if (gd->flags & GD_FLG_ENV_DEFAULT) {
+				env_save();
+			}
+		}
+	}
+
+	return 0;
+}
+#else
+int board_save_default_env(void)
+{
+	return 0;
+}
+#endif
 
 int board_set_console(void)
 {
